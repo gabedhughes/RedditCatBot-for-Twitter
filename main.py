@@ -103,7 +103,7 @@ def get_image(img_url):
                 image_file.write(chunk)
         return img_path
     else:
-        print('[bot] Image failed to download. Status code: ' + resp.status_code)
+        print('[bot] Image failed to download. Status code: '.resp.status_code)
     return ''
 
 
@@ -145,10 +145,10 @@ def main():
 
     multireddit = setup_connection_reddit(MULTIREDDIT_USER, MULTIREDDIT_NAME)
     post_dict, post_ids = tweet_creator(multireddit)
-    #tweeter(post_dict,post_ids)
+    tweeter(post_dict,post_ids)
 
-    #for filename in globals(IMAGE_DIR + '/*'):
-    #    os.remove(filename)
+    for filename in globals(IMAGE_DIR + '/*'):
+        os.remove(filename)
 
 
 if __name__ == '__main__':
