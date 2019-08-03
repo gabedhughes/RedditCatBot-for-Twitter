@@ -11,6 +11,7 @@ import requests
 
 import praw as praw
 import tweepy as tweepy
+from glob import glob
 
 
 # Twitter API keys
@@ -145,9 +146,9 @@ def main():
 
     multireddit = setup_connection_reddit(MULTIREDDIT_USER, MULTIREDDIT_NAME)
     post_dict, post_ids = tweet_creator(multireddit)
-    tweeter(post_dict,post_ids)
+    tweeter(post_dict, post_ids)
 
-    for filename in globals(IMAGE_DIR + '/*'):
+    for filename in glob(IMAGE_DIR + '/*'):
         os.remove(filename)
 
 
