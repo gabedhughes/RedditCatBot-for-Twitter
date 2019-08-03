@@ -5,19 +5,27 @@
 #     * http://www.wtfpl.net/ for more details.
 
 import os
-
-# Twitter API keys
 import time
+import urllib
+import requests
 
+import praw as praw
 import tweepy as tweepy
 
+
+# Twitter API keys
 ACCESS_TOKEN = ''
 ACCESS_TOKEN_SECRET = ''
 CONSUMER_KEY = ''
 CONSUMER_SECRET = ''
 
+# Reddit access tokens
+REDDIT_CLIENT_ID = ''
+REDDIT_CLIENT_SECRET = ''
+
 # Multireddit to find posts from
-MULTIREDDIT_TO_MONITOR = ''
+MULTIREDDIT_USER = ''
+MULTIREDDIT_NAME = ''
 
 # Directory to download images to
 IMAGE_DIR = 'img'
@@ -36,6 +44,67 @@ DELAY_BETWEEN_TWEETS = 3600
 
 # Length of t.co links (More info: https://dev.twitter.com/overview/t.co)
 T_CO_LINKS_LEN = 24
+
+
+def setup_connection_reddit(multireddit_user, multireddit_name):
+    print('[BOT] Setting up connection with Reddit')
+    reddit_api = praw.Reddit(client_id=REDDIT_CLIENT_ID,
+                             client_secret=REDDIT_CLIENT_SECRET,
+                             user_agent='RedditCatBot by u/gdhughes5')
+    return reddit_api.multireddit(multireddit_user,multireddit_name)
+
+
+def tweet_creator(multireddit_info):
+    post_dict = {}
+    post_ids = []
+
+    print('[BOT] Getting posts from Reddit')
+
+    for submission in multireddit_info.hot(limit=5):
+        if not already_tweeted(submission.id):
+            post_dict[submission.title] = {}
+            post = post_dict[submission.title]
+            post['link'] = submission.permalink
+
+            post['img_path'] = get_image(submission.url)
+
+            post_ids.append(submission.id)
+        else:
+            print('[BOT] Already tweeted: {}'.format(str(submission)))
+
+    return post_dict, post_ids
+
+
+def already_tweeted(post_id):
+    found = False
+    with open(POSTED_CACHE, 'r') as in_file:
+        for line in in_file:
+            if post_id in line:
+                found = True
+                break
+    return found
+
+
+def strip_title(title, num_characters):
+    if len(title) <= num_characters:
+        return title
+    else:
+        return title[:num_characters - 1] + '…'
+
+
+def get_image(img_url):
+    file_name = os.path.basename(urllib.parse.urlsplit(img_url).path)
+    img_path = IMAGE_DIR + '/' + file_name
+    print('[BOT] Downloading image at URL ' + img_url + ' to ' + img_path)
+    resp = requests.get(img_url, stream=True)
+    if resp.status_code == 200:
+        with open(img_path, 'wb') as image_file:
+            for chunk in resp:
+                image_file.write(chunk)
+        return img_path
+    else:
+        print('[bot] Image failed to download. Status code: ' + resp.status_code)
+    return ''
 
 
 def tweeter(post_dict, post_ids):
@@ -74,12 +143,12 @@ def main():
     if not os.path.exists(IMAGE_DIR):
         os.makedirs(IMAGE_DIR)
 
-    multireddit = setup_connection_reddit(multireddit)
+    multireddit = setup_connection_reddit(MULTIREDDIT_USER, MULTIREDDIT_NAME)
     post_dict, post_ids = tweet_creator(multireddit)
-    tweeter(post_dict,post_ids)
+    #tweeter(post_dict,post_ids)
 
-    for filename in globals(IMAGE_DIR + '/*'):
-        os.remove(filename)
+    #for filename in globals(IMAGE_DIR + '/*'):
+    #    os.remove(filename)
 
 
 if __name__ == '__main__':
